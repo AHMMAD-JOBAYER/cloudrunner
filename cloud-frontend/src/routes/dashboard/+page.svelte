@@ -231,7 +231,11 @@
               rows="15"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="{ config, pkgs, ... }:&#10;&#10;{&#10;  # Your NixOS configuration here&#10;}"
+              placeholder={`{ config, pkgs, ... }:
+
+{
+  # Your NixOS configuration here
+}`}
             ></textarea>
           </div>
 
