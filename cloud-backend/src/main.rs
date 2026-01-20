@@ -5,8 +5,8 @@ mod handlers;
 mod models;
 
 use axum::{
-    Router,
     routing::{delete, get, post, put},
+    Router,
 };
 use sqlx::PgPool;
 use tower_http::cors::{Any, CorsLayer};
@@ -41,6 +41,10 @@ async fn main() {
     let db_pool = db::create_pool(&config.database_url)
         .await
         .expect("Failed to create database pool");
+    sqlx::migrate!()
+        .run(&db_pool)
+        .await
+        .expect("auto sqlx migration failed!");
 
     tracing::info!("Database connection established");
 
