@@ -2,23 +2,20 @@ services:
   backend:
     image: cloud-backend
     container_name: cloud-backend
-    ports:
-      - "3000:3000"
     depends_on:
       - db
-
+    environment:
+      DATABASE_URL: postgres://postgres:supersecretpassword@db:5432/university_nixos
+    networks:
+      - app-network
 
   frontend:
     image: cloud-frontend
     container_name: cloud-frontend
     depends_on:
       - backend
-    ports:
-      - "8000:8000"
-    environment:
-      PUBLIC_API_URL: http://localhost:3000
-      VITE_API_URL: http://localhost:3000
-
+    networks:
+      - app-network
 
   db:
     image: postgres:alpine
@@ -27,10 +24,31 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: supersecretpassword
       POSTGRES_DB: university_nixos
-    ports:
-      - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  caddy:
+    image: caddy:alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
 
 volumes:
   pg_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  app-network:

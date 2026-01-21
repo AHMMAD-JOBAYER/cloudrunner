@@ -1,14 +1,14 @@
 import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "";
 
-if (!API_URL) {
-  throw new Error(
-    "❌ VITE_API_URL is not defined. " +
-      "Please set it in your environment or .env file.",
-  );
-}
+// if (!API_URL) {
+//   throw new Error(
+//     "❌ VITE_API_URL is not defined. " +
+//       "Please set it in your environment or .env file.",
+//   );
+// }
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -57,7 +57,12 @@ class ApiClient {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    // by me
+    const cleanURL = `${API_URL.replace(/\/$/, "")}/${
+      endpoint.replace(/^\//, "")
+    }`;
+
+    const response = await fetch(`${cleanURL}`, {
       ...options,
       headers,
     });
