@@ -1,7 +1,14 @@
-import { browser } from '$app/environment';
-import { goto } from '$app/navigation';
+import { browser } from "$app/environment";
+import { goto } from "$app/navigation";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  throw new Error(
+    "❌ VITE_API_URL is not defined. " +
+      "Please set it in your environment or .env file.",
+  );
+}
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -33,21 +40,21 @@ export interface NixOsConfig {
 class ApiClient {
   private getToken(): string | null {
     if (!browser) return null;
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const token = this.getToken();
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -58,16 +65,20 @@ class ApiClient {
     if (response.status === 401) {
       // Unauthorized - clear token and redirect to login
       if (browser) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('teacher');
-        goto('/login');
+        localStorage.removeItem("token");
+        localStorage.removeItem("teacher");
+        goto("/login");
       }
-      throw new Error('Unauthorized');
+      throw new Error("Unauthorized");
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      const error = await response.json().catch(() => ({
+        message: "An error occurred",
+      }));
+      throw new Error(
+        error.message || `HTTP error! status: ${response.status}`,
+      );
     }
 
     return response.json();
@@ -80,22 +91,28 @@ class ApiClient {
     full_name: string;
     department?: string;
   }): Promise<ApiResponse<Teacher>> {
-    return this.request('/api/auth/register', {
-      method: 'POST',
+    return this.request("/api/auth/register", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async login(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
-    const response = await this.request<ApiResponse<LoginResponse>>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+  async login(
+    email: string,
+    password: string,
+  ): Promise<ApiResponse<LoginResponse>> {
+    const response = await this.request<ApiResponse<LoginResponse>>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      },
+    );
 
     // Store token and teacher data
     if (browser && response.data) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('teacher', JSON.stringify(response.data.teacher));
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("teacher", JSON.stringify(response.data.teacher));
     }
 
     return response;
@@ -103,59 +120,68 @@ class ApiClient {
 
   async logout(): Promise<void> {
     try {
-      await this.request('/api/auth/logout', { method: 'POST' });
+      await this.request("/api/auth/logout", { method: "POST" });
     } finally {
       if (browser) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('teacher');
+        localStorage.removeItem("token");
+        localStorage.removeItem("teacher");
       }
     }
   }
 
   async getCurrentTeacher(): Promise<ApiResponse<Teacher>> {
-    return this.request('/api/auth/me');
+    return this.request("/api/auth/me");
   }
 
   async requestPasswordReset(email: string): Promise<ApiResponse<void>> {
-    return this.request('/api/auth/reset-password', {
-      method: 'POST',
+    return this.request("/api/auth/reset-password", {
+      method: "POST",
       body: JSON.stringify({ email }),
     });
   }
 
-  async confirmPasswordReset(token: string, new_password: string): Promise<ApiResponse<void>> {
-    return this.request('/api/auth/reset-password/confirm', {
-      method: 'POST',
+  async confirmPasswordReset(
+    token: string,
+    new_password: string,
+  ): Promise<ApiResponse<void>> {
+    return this.request("/api/auth/reset-password/confirm", {
+      method: "POST",
       body: JSON.stringify({ token, new_password }),
     });
   }
 
   // Config endpoints
-  async uploadConfig(filename: string, content: string): Promise<ApiResponse<NixOsConfig>> {
-    return this.request('/api/configs', {
-      method: 'POST',
+  async uploadConfig(
+    filename: string,
+    content: string,
+  ): Promise<ApiResponse<NixOsConfig>> {
+    return this.request("/api/configs", {
+      method: "POST",
       body: JSON.stringify({ filename, content }),
     });
   }
 
   async listConfigs(): Promise<ApiResponse<NixOsConfig[]>> {
-    return this.request('/api/configs');
+    return this.request("/api/configs");
   }
 
   async getConfig(id: string): Promise<ApiResponse<NixOsConfig>> {
     return this.request(`/api/configs/${id}`);
   }
 
-  async updateConfig(id: string, content: string): Promise<ApiResponse<NixOsConfig>> {
+  async updateConfig(
+    id: string,
+    content: string,
+  ): Promise<ApiResponse<NixOsConfig>> {
     return this.request(`/api/configs/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify({ content }),
     });
   }
 
   async deleteConfig(id: string): Promise<ApiResponse<void>> {
     return this.request(`/api/configs/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 }
